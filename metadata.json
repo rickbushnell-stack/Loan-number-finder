@@ -1,0 +1,5 @@
+{
+  "name": "Loan Change Auditor",
+  "description": "A professional tool for auditing loan data across multiple files, highlighting changes between versions and exporting to styled Excel reports.",
+  "requestFramePermissions": []
+}
