@@ -2,8 +2,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import Papa from 'papaparse';
 import { FileUp, Search, Download, FileSpreadsheet, AlertCircle, Info, Filter, Trash2 } from 'lucide-react';
-import { FileData, LoanRow, AuditResult } from './types';
-import { exportToExcel } from './services/excelService';
+import { FileData, LoanRow, AuditResult } from './types.ts';
+import { exportToExcel } from './services/excelService.ts';
 
 const App: React.FC = () => {
   const [files, setFiles] = useState<FileData[]>([]);
@@ -11,7 +11,6 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Core processing logic shared by both input change and drag-drop
   const processFiles = useCallback((fileList: FileList | File[] | null) => {
     if (!fileList || fileList.length === 0) return;
 
@@ -27,7 +26,6 @@ const App: React.FC = () => {
             resolve({
               name: file.name,
               data: results.data.map((row: any) => {
-                // Ensure Found_In_File is the first property for aesthetic ordering
                 const newRow: any = { Found_In_File: file.name };
                 Object.keys(row).forEach(k => {
                   newRow[k] = row[k];
@@ -41,7 +39,6 @@ const App: React.FC = () => {
     });
 
     Promise.all(filePromises).then((results) => {
-      // Append new files to the current list (additive)
       setFiles(prev => [...prev, ...results]);
       setLoading(false);
     }).catch(err => {
@@ -52,7 +49,7 @@ const App: React.FC = () => {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     processFiles(e.target.files);
-    e.target.value = ''; // Reset to allow re-uploading the same file if needed
+    e.target.value = '';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -81,7 +78,6 @@ const App: React.FC = () => {
     return files.flatMap(f => f.data);
   }, [files]);
 
-  // Determine the ID column (Loan #)
   const idKey = useMemo(() => {
     if (masterData.length === 0) return null;
     const firstRow = masterData[0];
@@ -93,12 +89,10 @@ const App: React.FC = () => {
   const auditResults = useMemo(() => {
     if (!searchQuery || !idKey || masterData.length === 0) return [];
 
-    // Filter instances of this loan across all files
     const filtered = masterData.filter(row => 
       String(row[idKey]).trim().toLowerCase() === searchQuery.trim().toLowerCase()
     );
 
-    // Calculate changes by comparing each version to the one before it chronologically (by upload/file order)
     const results: AuditResult[] = [];
     filtered.forEach((row, index) => {
       const changes = new Set<string>();
@@ -117,7 +111,6 @@ const App: React.FC = () => {
     return results;
   }, [masterData, searchQuery, idKey]);
 
-  // Summary columns show key IDs and any column that experienced a change
   const summaryColumns = useMemo(() => {
     if (auditResults.length === 0 || !idKey) return [];
     
@@ -126,7 +119,6 @@ const App: React.FC = () => {
       res.changes.forEach(c => changedCols.add(c));
     });
 
-    // Always include File Name and the ID column, then all columns that changed
     return ['Found_In_File', idKey, ...Array.from(changedCols).sort()];
   }, [auditResults, idKey]);
 
@@ -142,7 +134,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-[#fcfcfd]">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -175,7 +166,6 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-10 space-y-10">
-        {/* Step 1 & 2: Upload and Search */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
@@ -291,7 +281,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Audit Results Table */}
         {auditResults.length > 0 && (
           <section className="space-y-6 animate-in fade-in duration-700">
             <div className="flex items-center justify-between px-2">
@@ -370,24 +359,10 @@ const App: React.FC = () => {
       </footer>
 
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 10px;
-          height: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 20px;
-          border: 3px solid transparent;
-          background-clip: content-box;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #cbd5e1;
-          border: 3px solid transparent;
-          background-clip: content-box;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 20px; border: 3px solid transparent; background-clip: content-box; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; border: 3px solid transparent; background-clip: content-box; }
       `}</style>
     </div>
   );
