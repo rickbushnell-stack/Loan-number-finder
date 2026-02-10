@@ -122,12 +122,37 @@ const App: React.FC = () => {
     return ['Found_In_File', idKey, ...Array.from(changedCols).sort()];
   }, [auditResults, idKey]);
 
+  // Priority Column Order: 1. File, 2. Loan ID, 3. Changed Columns, 4. Everything else
+  const exportColumns = useMemo(() => {
+    if (auditResults.length === 0 || !idKey) return [];
+    
+    const allUniqueKeys = new Set<string>();
+    auditResults.forEach(res => {
+      Object.keys(res.row).forEach(k => allUniqueKeys.add(k));
+    });
+
+    const changedColsSet = new Set<string>();
+    auditResults.forEach(res => {
+      res.changes.forEach(c => changedColsSet.add(c));
+    });
+    const sortedChangedCols = Array.from(changedColsSet).sort();
+
+    const priorityCols = ['Found_In_File', idKey, ...sortedChangedCols];
+    const prioritySet = new Set(priorityCols);
+
+    const remainingCols = Array.from(allUniqueKeys)
+      .filter(k => !prioritySet.has(k))
+      .sort();
+
+    return [...priorityCols, ...remainingCols];
+  }, [auditResults, idKey]);
+
   const handleDownload = useCallback(() => {
     if (auditResults.length > 0 && idKey) {
-      // Pass the refined list of columns to ensure the Excel matches the UI
-      exportToExcel(auditResults, searchQuery, summaryColumns);
+      // Pass the exportColumns which contains ALL columns in the requested order
+      exportToExcel(auditResults, searchQuery, exportColumns);
     }
-  }, [auditResults, searchQuery, idKey, summaryColumns]);
+  }, [auditResults, searchQuery, idKey, exportColumns]);
 
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
