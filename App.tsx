@@ -124,9 +124,10 @@ const App: React.FC = () => {
 
   const handleDownload = useCallback(() => {
     if (auditResults.length > 0 && idKey) {
-      exportToExcel(auditResults, searchQuery);
+      // Pass the refined list of columns to ensure the Excel matches the UI
+      exportToExcel(auditResults, searchQuery, summaryColumns);
     }
-  }, [auditResults, searchQuery, idKey]);
+  }, [auditResults, searchQuery, idKey, summaryColumns]);
 
   const removeFile = (index: number) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
